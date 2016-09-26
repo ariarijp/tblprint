@@ -2,7 +2,8 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"flag"
+	"log"
 	"os"
 	"strings"
 
@@ -10,29 +11,31 @@ import (
 )
 
 func main() {
-	SEP := "\t"
+	optSep := flag.String("sep", "\t", "Separator")
+	optHeader := flag.Bool("header", true, "First line as header")
+	flag.Parse()
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoWrapText(false)
 
 	scanner := bufio.NewScanner(os.Stdin)
-	header := false
 
+	lineNum := 1
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if !header {
-			table.SetHeader(strings.Split(line, SEP))
-			header = true
-			continue
+		if *optHeader && lineNum == 1 {
+			table.SetHeader(strings.Split(line, *optSep))
+		} else {
+			table.Append(strings.Split(line, *optSep))
 		}
 
-		table.Append(strings.Split(line, SEP))
+		lineNum++
 	}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
-		os.Exit(1)
+	err := scanner.Err()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	table.Render()
